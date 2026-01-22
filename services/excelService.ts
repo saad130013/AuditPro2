@@ -65,7 +65,7 @@ export const parseExcelFile = async (file: File): Promise<SheetData[]> => {
 
 export const calculateQuantitativeStats = (sheets: SheetData[]): QuantitativeSummary => {
   const statsSheet = sheets.find(s => 
-    ["stats", "summary", "statistics"].some(k => s.name.toLowerCase().includes(k))
+    ["stats", "summary", "statistics", "ملخص", "إحصائيات"].some(k => s.name.toLowerCase().includes(k))
   );
   
   let maleCount = 0;
@@ -85,9 +85,9 @@ export const calculateQuantitativeStats = (sheets: SheetData[]): QuantitativeSum
 
       if (label === 'male' || label === 'ذكر') maleCount = count;
       if (label === 'female' || label === 'أنثى') femaleCount = count;
-      if (label.includes('joiner') || label.includes('جديد')) joiners = count;
-      if (label.includes('leaver') || label.includes('مغادر')) leavers = count;
-      if (label.includes('transfer') || label.includes('نقل')) transfers = count;
+      if (label.includes('joiner') || label.includes('جديد') || label.includes('تعيين')) joiners = count;
+      if (label.includes('leaver') || label.includes('مغادر') || label.includes('استقالة')) leavers = count;
+      if (label.includes('transfer') || label.includes('نقل') || label.includes('مناقلة')) transfers = count;
       if (label.includes('total') || label.includes('إجمالي')) summaryTotal = count;
     });
   }
@@ -97,28 +97,26 @@ export const calculateQuantitativeStats = (sheets: SheetData[]): QuantitativeSum
     return s ? s.data.length : 0;
   };
 
-  // The user specifically requested Total = Male + Female
+  // Critical requirement: Total = Male + Female
   const calculatedTotal = maleCount + femaleCount;
-  
-  // Use calculated total if available, else summary total, else row count of first sheet
   const finalTotal = calculatedTotal > 0 ? calculatedTotal : (summaryTotal > 0 ? summaryTotal : getRowCount(["stats summary", "workforce", "table 1"]));
 
   return {
     totalEmployees: finalTotal,
-    jobRolesCount: getRowCount(["job roles", "roles", "designation"]),
-    joinersCount: joiners || getRowCount(["joiners report", "joiner", "new staff"]),
-    leaversCount: leavers || getRowCount(["leavers report", "leaver", "exit"]),
-    transfersCount: transfers || getRowCount(["site transfers", "transfer", "movement"])
+    jobRolesCount: getRowCount(["job roles", "roles", "وظائف"]),
+    joinersCount: joiners || getRowCount(["joiners", "تعيينات", "new staff"]),
+    leaversCount: leavers || getRowCount(["leavers", "مغادرين", "exit"]),
+    transfersCount: transfers || getRowCount(["transfers", "نقل", "movement"])
   };
 };
 
 export const calculateVacationStats = (sheets: SheetData[]): VacationStats | null => {
   const leaveSheet = sheets.find(s => 
-    ["leave", "vacation", "individual"].some(k => s.name.toLowerCase().includes(k))
+    ["leave", "vacation", "individual", "إجازات", "اجازات"].some(k => s.name.toLowerCase().includes(k))
   );
   if (!leaveSheet || leaveSheet.data.length === 0) return null;
   const data = leaveSheet.data;
-  const uniqueEmployees = new Set(data.map(row => getValueByKeys(row, ["MRN", "Staff Name", "Name"])).filter(Boolean)).size;
+  const uniqueEmployees = new Set(data.map(row => getValueByKeys(row, ["MRN", "Staff Name", "Name", "رقم الملف", "الاسم"])).filter(Boolean)).size;
   const monthlyMap: Record<string, number> = {};
   data.forEach(row => {
     let month = String(getValueByKeys(row, ["Month", "الشهر"]) || "").toUpperCase().trim();

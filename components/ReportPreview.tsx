@@ -10,17 +10,17 @@ interface ReportPreviewProps {
 const ReportPreview: React.FC<ReportPreviewProps> = ({ report, onSummaryChange }) => {
   const preparerText = `Prepared by: ${report.preparedBy}`;
 
-  // Helper to determine if a section should be shown as a summary page
-  const isSummarySection = (name: string) => {
+  // Helper to determine if a section should be shown as a dedicated data page
+  const isDisplayableSection = (name: string) => {
     const n = name.toLowerCase();
     return n.includes("stats") || n.includes("summary") || n.includes("roles") || 
-           n.includes("joiner") || n.includes("leaver") || n.includes("transfer");
+           n.includes("joiner") || n.includes("leaver") || n.includes("transfer") ||
+           n.includes("leave") || n.includes("vacation") || n.includes("إجازات") || n.includes("اجازات");
   };
 
   if (report.type === 'vacation') {
     return (
       <div className="flex flex-col items-center bg-gray-200 p-12 min-h-screen font-sans">
-        {/* Vacation Cover and KPI Content */}
         <div className="bg-white shadow-2xl w-[210mm] min-h-[297mm] mb-12 overflow-hidden flex flex-col print:shadow-none print:m-0">
           <div className="bg-[#1e293b] text-white p-16 text-center">
             <h1 className="text-4xl font-black uppercase tracking-widest mb-4">Annual Vacation Report</h1>
@@ -67,6 +67,29 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, onSummaryChange }
           </div>
           <div className="p-8 text-center text-[10px] text-gray-400 border-t border-gray-100 italic">Page 1</div>
         </div>
+
+        {/* Vacation Data Pages */}
+        {report.sections.map((section, sIdx) => (
+          <div key={sIdx} className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[25mm] mb-12 relative overflow-hidden print:shadow-none print:m-0">
+            <h3 className="text-sm font-black uppercase border-b border-black mb-4">{section.title}</h3>
+            <div className="border border-gray-300">
+              <table className="w-full text-left text-[9px] border-collapse">
+                <thead>
+                  <tr className="bg-slate-800 text-white font-bold">
+                    {section.headers.map((h, i) => <th key={i} className="p-1.5 border border-slate-600">{h}</th>)}
+                  </tr>
+                </thead>
+                <tbody className="uppercase">
+                  {section.data.map((row, rIdx) => (
+                    <tr key={rIdx} className="border-b border-gray-200">
+                      {section.headers.map((h, cIdx) => <td key={cIdx} className="p-1.5 border-r border-gray-100">{row[h]}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -108,15 +131,15 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, onSummaryChange }
               </div>
             ))}
           </div>
-          <p className="mt-12 text-xs text-gray-400 italic text-center">
-            * Total Workforce is calculated as the sum of all male and female staff recorded for this period.
+          <p className="mt-12 text-[10px] text-gray-400 italic text-center uppercase tracking-widest">
+            * This summary is derived from combined male and female reporting data.
           </p>
           <div className="absolute bottom-[25mm] left-[25mm] right-[25mm] text-center text-gray-400 text-[10px] border-t pt-4">Page 2</div>
         </div>
       )}
 
-      {/* Data Pages for Summary Sheets (Stats Summary, Job Roles, Joiners Report, Leavers Report, Site Transfers) */}
-      {report.sections.filter(s => isSummarySection(s.originalSheetName)).map((section, sIdx) => (
+      {/* Show all relevant sheets as data pages (Stats, Roles, Joiners, Leavers, Transfers, Vacations) */}
+      {report.sections.filter(s => isDisplayableSection(s.originalSheetName)).map((section, sIdx) => (
         <div key={sIdx} className="bg-white shadow-2xl w-[210mm] min-h-[297mm] p-[25mm] mb-12 relative overflow-hidden print:shadow-none print:m-0">
           <div className="border border-black bg-neutral-50 p-4 mb-6">
             <h3 className="text-sm font-black uppercase tracking-widest text-black">{section.title.toUpperCase()}</h3>
@@ -124,15 +147,15 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, onSummaryChange }
           <div className="border border-gray-300">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-neutral-800 text-white font-bold uppercase text-[9px]">
+                <tr className="bg-neutral-800 text-white font-bold uppercase text-[8px]">
                   {section.headers.map((h, i) => <th key={i} className="p-2 border border-neutral-600">{h}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {section.data.map((row, rIdx) => (
-                  <tr key={rIdx} className={`border-b border-gray-300 ${["Nationality", "Gender", "Total", "إجمالي"].some(k => String(Object.values(row)[0] || "").toLowerCase().includes(k.toLowerCase())) ? 'bg-neutral-100 font-bold' : 'bg-white'}`}>
+                  <tr key={rIdx} className={`border-b border-gray-300 bg-white`}>
                     {section.headers.map((h, cIdx) => (
-                      <td key={cIdx} className="py-2 px-2 text-[10px] border-r border-gray-200 last:border-r-0 uppercase">
+                      <td key={cIdx} className="py-1.5 px-2 text-[9px] border-r border-gray-200 last:border-r-0 uppercase">
                         {row[h]}
                       </td>
                     ))}
@@ -140,9 +163,6 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, onSummaryChange }
                 ))}
               </tbody>
             </table>
-          </div>
-          <div className="absolute bottom-[25mm] left-[25mm] right-[25mm] text-center text-gray-400 text-[10px] border-t pt-4 italic uppercase">
-            {section.title} | {preparerText}
           </div>
         </div>
       ))}
